@@ -51,6 +51,10 @@ netlify [command] help
 
 Run any Netlify API method
 
+### [build](/docs/commands/build.md)
+
+(Beta) Build on your local machine
+
 ### [deploy](/docs/commands/deploy.md)
 
 Create a new deploy from the contents of a folder
@@ -62,6 +66,20 @@ Local dev server
 | Subcommand | description  |
 |:--------------------------- |:-----|
 | [`dev:exec`](/docs/commands/dev.md#devexec) | Exec command  |
+| [`dev:trace`](/docs/commands/dev.md#devtrace) | Trace command  |
+
+
+### [env](/docs/commands/env.md)
+
+(Beta) Control environment variables for the current site
+
+| Subcommand | description  |
+|:--------------------------- |:-----|
+| [`env:get`](/docs/commands/env.md#envget) | Get resolved value of specified environment variable (includes netlify.toml)  |
+| [`env:import`](/docs/commands/env.md#envimport) | Import and set environment variables from .env file  |
+| [`env:list`](/docs/commands/env.md#envlist) | Lists resolved environment variables for site (includes netlify.toml)  |
+| [`env:set`](/docs/commands/env.md#envset) | Set value of environment variable  |
+| [`env:unset`](/docs/commands/env.md#envunset) | Unset an environment variable which removes it from the UI  |
 
 
 ### [functions](/docs/commands/functions.md)

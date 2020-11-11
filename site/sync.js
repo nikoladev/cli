@@ -1,57 +1,50 @@
+const fs = require('fs').promises
 const path = require('path')
-const fs = require('fs-extra')
-const config = require('./config')
-const { promisify } = require('util')
-const readdirP = promisify(fs.readdir)
-const statP = promisify(fs.stat)
-const readFile = promisify(fs.readFile)
-const writeFile = promisify(fs.writeFile)
-const deleteFile = promisify(fs.unlink)
 
-async function readDir(dir, allFiles = []) {
-  const files = (await readdirP(dir)).map(f => path.join(dir, f))
+const config = require('./config')
+const { copyDirRecursiveAsync } = require('./fs')
+
+const readDir = async function (dir, allFiles = []) {
+  const files = (await fs.readdir(dir)).map((file) => path.join(dir, file))
   allFiles.push(...files)
-  await Promise.all(
-    files.map(
-      async f => (await statP(f)).isDirectory() && readDir(f, allFiles)
-    )
-  )
+  await Promise.all(files.map(async (file) => (await fs.stat(file)).isDirectory() && readDir(file, allFiles)))
   return allFiles
 }
 
-async function syncLocalContent() {
+const syncLocalContent = async function () {
   const src = path.join(config.docs.srcPath)
   const destination = path.join(config.docs.outputPath)
 
-  await fs.copy(src, destination)
+  await copyDirRecursiveAsync(src, destination)
   console.log(`Docs synced to ${destination}`)
 
   const files = await readDir(destination)
-  const mdFiles = files.filter((file) => {
-    return file.endsWith('.md')
-  }).map((path) => {
-    return removeMarkDownLinks(path)
-  })
+  const mdFiles = files
+    .filter((file) => {
+      return file.endsWith('.md')
+    })
+    .map((file) => {
+      return removeMarkDownLinks(file)
+    })
 
   await Promise.all(mdFiles)
+  console.log('Synced!')
 }
 
-async function removeMarkDownLinks(filePath) {
-  const content = await readFile(filePath, 'utf-8')
-  const newContent = content.replace(/\.md#/gm, '#').replace(/\/docs\/commands\//gm, '/commands/')
+const removeMarkDownLinks = async function (filePath) {
+  const content = await fs.readFile(filePath, 'utf-8')
+  const newContent = content.replace(/(\w+)\.md/gm, '$1').replace(/\/docs\/commands\//gm, '/commands/')
   // Rename README.md to index.md
   if (path.basename(filePath) === 'README.md') {
     const newPath = path.join(path.dirname(filePath), 'index.md')
     // Delete README.md from docs site
-    await deleteFile(filePath)
+    await fs.unlink(filePath)
     // Write index.md
-    await writeFile(newPath, newContent)
+    await fs.writeFile(newPath, newContent)
     return newPath
   }
-  await writeFile(filePath, newContent)
+  await fs.writeFile(filePath, newContent)
   return filePath
 }
 
-syncLocalContent().then(() => {
-  console.log('Synced!')
-})
+syncLocalContent()

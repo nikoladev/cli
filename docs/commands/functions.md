@@ -44,8 +44,11 @@ netlify functions:build
 
 **Flags**
 
-- `functions` (*option*) - Specify a functions folder to build to
-- `src` (*option*) - Specify the source folder for the functions
+- `functions` (*string*) - Specify a functions folder to build to
+- `src` (*string*) - Specify the source folder for the functions
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 ## `functions:create`
@@ -64,8 +67,11 @@ netlify functions:create
 
 **Flags**
 
-- `name` (*option*) - function name
-- `url` (*option*) - pull template from URL
+- `name` (*string*) - function name
+- `url` (*string*) - pull template from URL
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 **Examples**
 
@@ -92,11 +98,15 @@ netlify functions:invoke
 
 **Flags**
 
-- `name` (*option*) - function name to invoke
-- `functions` (*option*) - Specify a functions folder to parse, overriding netlify.toml
-- `querystring` (*option*) - Querystring to add to your function invocation
-- `payload` (*option*) - Supply POST payload in stringified json, or a path to a json file
+- `name` (*string*) - function name to invoke
+- `functions` (*string*) - Specify a functions folder to parse, overriding netlify.toml
+- `querystring` (*string*) - Querystring to add to your function invocation
+- `payload` (*string*) - Supply POST payload in stringified json, or a path to a json file
 - `identity` (*boolean*) - simulate Netlify Identity authentication JWT. pass --no-identity to affirm unauthenticated request
+- `port` (*string*) - Port where netlify dev is accessible. e.g. 8888
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 **Examples**
 
@@ -106,7 +116,7 @@ $ netlify functions:invoke myfunction
 $ netlify functions:invoke --name myfunction
 $ netlify functions:invoke --name myfunction --identity
 $ netlify functions:invoke --name myfunction --no-identity
-$ netlify functions:invoke myfunction --payload "{"foo": 1}"
+$ netlify functions:invoke myfunction --payload '{"foo": 1}'
 $ netlify functions:invoke myfunction --querystring "foo=1
 $ netlify functions:invoke myfunction --payload "./pathTo.json"
 ```

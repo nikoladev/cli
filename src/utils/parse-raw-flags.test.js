@@ -1,39 +1,40 @@
 const test = require('ava')
+
 const { parseRawFlags, aggressiveJSONParse } = require('./parse-raw-flags')
 
-test.serial('JSONTruthy works with various inputs', async t => {
+test.serial('JSONTruthy works with various inputs', (t) => {
   const testPairs = [
     {
       input: 'true',
-      wanted: true
+      wanted: true,
     },
     {
       input: 'false',
-      wanted: false
+      wanted: false,
     },
     {
       input: JSON.stringify({ foo: 'bar' }),
-      wanted: { foo: 'bar' }
+      wanted: { foo: 'bar' },
     },
     {
       input: 'Hello-world 1234',
-      wanted: 'Hello-world 1234'
-    }
+      wanted: 'Hello-world 1234',
+    },
   ]
 
-  testPairs.forEach(pair => {
+  testPairs.forEach((pair) => {
     t.deepEqual(aggressiveJSONParse(pair.input), pair.wanted)
   })
 })
 
-test.serial('parseRawFlags works', async t => {
+test.serial('parseRawFlags works', (t) => {
   const input = [
     { type: 'arg', input: 'FAUNA' },
     { type: 'arg', input: 'FOO' },
     { type: 'arg', input: 'BAR' },
     { type: 'arg', input: '--hey' },
     { type: 'arg', input: 'hi' },
-    { type: 'arg', input: '--heep' }
+    { type: 'arg', input: '--heep' },
   ]
 
   const expected = { hey: 'hi', heep: true }

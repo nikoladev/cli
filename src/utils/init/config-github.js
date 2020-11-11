@@ -1,18 +1,22 @@
-const version = require('../../../package.json').version
-const os = require('os')
-const ghauth = require('../../utils/gh-auth')
-const Octokit = require('@octokit/rest')
-const parseGitRemote = require('parse-github-url')
-const inquirer = require('inquirer')
-const path = require('path')
 const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+const { Octokit } = require('@octokit/rest')
 const chalk = require('chalk')
+const inquirer = require('inquirer')
+const parseGitRemote = require('parse-github-url')
+
+const { version } = require('../../../package.json')
+const ghauth = require('../gh-auth')
+
 const { makeNetlifyTOMLtemplate } = require('./netlify-toml-template')
 
-const UA = 'Netlify CLI ' + version
+const UA = `Netlify CLI ${version}`
 
-module.exports = configGithub
-async function configGithub(ctx, site, repo) {
+const PAGE_SIZE = 100
+
+module.exports = async function configGithub(ctx, site, repo) {
   const { api, globalConfig } = ctx.netlify
   const current = globalConfig.get('userId')
 
@@ -20,15 +24,18 @@ async function configGithub(ctx, site, repo) {
 
   if (!ghtoken || !ghtoken.user || !ghtoken.token) {
     const newToken = await ghauth({
-      scopes: ['admin:org', 'admin:public_key', 'repo', 'user'],
-      userAgent: UA,
-      note: `Netlify CLI ${os.userInfo().username}@${os.hostname()}`
+      opts: {
+        scopes: ['admin:org', 'admin:public_key', 'repo', 'user'],
+        userAgent: UA,
+        note: `Netlify CLI ${os.userInfo().username}@${os.hostname()}`,
+      },
+      log: ctx.log,
     })
     globalConfig.set(`users.${current}.auth.github`, newToken)
     ghtoken = newToken
   }
   const octokit = new Octokit({
-    auth: `token ${ghtoken.token}`
+    auth: `token ${ghtoken.token}`,
   })
 
   const key = await api.createDeployKey()
@@ -39,37 +46,38 @@ async function configGithub(ctx, site, repo) {
     key: key.public_key,
     repo: parsedURL.name,
     owner: parsedURL.owner,
-    read_only: true
+    read_only: true,
   })
 
   repo.deploy_key_id = key.id
 
   // TODO: Look these up and default to the lookup order
 
-  let defaultBuildCmd,
-    defaultBuildDir = '.'
-  const { build } = ctx.netlify.config // read from netlify toml
+  let defaultBuildCmd
+  let defaultBuildDir = '.'
+  // read from netlify toml
+  const { build } = ctx.netlify.config
   if (build && build.command) {
     defaultBuildCmd = build.command
   }
   if (build && build.publish) {
     defaultBuildDir = build.publish
   }
-  if (build && build.functions) console.log('Netlify functions folder is ' + chalk.yellow(build.functions))
+  if (build && build.functions) console.log(`Netlify functions folder is ${chalk.yellow(build.functions)}`)
   const { buildCmd, buildDir } = await inquirer.prompt([
     {
       type: 'input',
       name: 'buildCmd',
       message: 'Your build command (hugo build/yarn run build/etc):',
-      filter: val => (val === '' ? '# no build command' : val),
-      default: defaultBuildCmd
+      filter: (val) => (val === '' ? '# no build command' : val),
+      default: defaultBuildCmd,
     },
     {
       type: 'input',
       name: 'buildDir',
       message: 'Directory to deploy (blank for current dir):',
-      default: defaultBuildDir
-    }
+      default: defaultBuildDir,
+    },
   ])
 
   const tomlpath = path.join(ctx.netlify.site.root, 'netlify.toml')
@@ -80,8 +88,8 @@ async function configGithub(ctx, site, repo) {
         type: 'confirm',
         name: 'makeNetlifyTOML',
         message: 'No netlify.toml detected. Would you like to create one with these build settings?',
-        default: true
-      }
+        default: true,
+      },
     ])
     if (makeNetlifyTOML && ctx.netlify.site && ctx.netlify.site.root) {
       fs.writeFileSync(tomlpath, makeNetlifyTOMLtemplate({ command: buildCmd, publish: buildDir }))
@@ -98,7 +106,7 @@ async function configGithub(ctx, site, repo) {
 
   const results = await octokit.repos.get({
     owner: parsedURL.owner,
-    repo: parsedURL.name
+    repo: parsedURL.name,
   })
 
   repo.id = results.data.id
@@ -111,12 +119,12 @@ async function configGithub(ctx, site, repo) {
   const hooks = await octokit.repos.listHooks({
     owner: parsedURL.owner,
     repo: parsedURL.name,
-    per_page: 100
+    per_page: PAGE_SIZE,
   })
 
   let hookExists = false
 
-  hooks.data.forEach(hook => {
+  hooks.data.forEach((hook) => {
     if (hook.config.url === site.deploy_hook) hookExists = true
   })
 
@@ -128,99 +136,53 @@ async function configGithub(ctx, site, repo) {
         name: 'web',
         config: {
           url: site.deploy_hook,
-          content_type: 'json'
+          content_type: 'json',
         },
         events: ['push', 'pull_request', 'delete'],
-        active: true
+        active: true,
       })
-    } catch (e) {
+    } catch (error) {
       // Ignore exists error if the list doesn't return all installed hooks
-      if (!e.message.includes('Hook already exists on this repository')) ctx.error(e)
+      if (!error.message.includes('Hook already exists on this repository')) ctx.error(error)
     }
   }
-
-  // TODO: Generalize this so users can reset these automatically.
-  // Quick and dirty implementation
-  const ntlHooks = await api.listHooksBySiteId({ siteId: site.id })
-
-  const createdHook = ntlHooks.find(h => h.type === 'github_commit_status' && h.event === 'deploy_created')
-  const failedHook = ntlHooks.find(h => h.type === 'github_commit_status' && h.event === 'deploy_failed')
-  const buildingHook = ntlHooks.find(h => h.type === 'github_commit_status' && h.event === 'deploy_building')
 
   ctx.log()
   ctx.log(`Creating Netlify Github Notification Hooks...`)
 
-  if (!createdHook || createdHook.disabled) {
-    await api.createHookBySiteId({
-      site_id: site.id,
-      body: {
-        type: 'github_commit_status',
-        event: 'deploy_created',
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Created Github deploy_created Hook: ${h.id}`)
-  } else {
-    await api.updateHook({
-      hook_id: createdHook.id,
-      body: {
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Updated Github Created Hook: ${h.id}`)
-  }
-
-  if (!failedHook || failedHook.disabled) {
-    await api.createHookBySiteId({
-      site_id: site.id,
-      body: {
-        type: 'github_commit_status',
-        event: 'deploy_failed',
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Created Github deploy_failed hook: ${h.id}`)
-  } else {
-    await api.updateHook({
-      hook_id: failedHook.id,
-      body: {
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Updated Github deploy_failed hook: ${h.id}`)
-  }
-
-  if (!buildingHook || buildingHook.disabled) {
-    await api.createHookBySiteId({
-      site_id: site.id,
-      body: {
-        type: 'github_commit_status',
-        event: 'deploy_building',
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Created Github deploy_building hook: ${h.id}`)
-  } else {
-    await api.updateHook({
-      hook_id: buildingHook.id,
-      body: {
-        data: {
-          access_token: ghtoken.token
-        }
-      }
-    })
-    // ctx.log(`Updated Github deploy_building hook: ${h.id}`)
-  }
+  // TODO: Generalize this so users can reset these automatically.
+  // Quick and dirty implementation
+  const ntlHooks = await api.listHooksBySiteId({ siteId: site.id })
+  await Promise.all(GITHUB_HOOK_EVENTS.map((event) => upsertHook({ ntlHooks, event, api, site, ghtoken })))
 
   ctx.log(`Netlify Notification Hooks configured!`)
 }
+
+const upsertHook = function ({ ntlHooks, event, api, site, ghtoken }) {
+  const ntlHook = ntlHooks.find((hook) => hook.type === GITHUB_HOOK_TYPE && hook.event === event)
+
+  if (!ntlHook || ntlHook.disabled) {
+    return api.createHookBySiteId({
+      site_id: site.id,
+      body: {
+        type: GITHUB_HOOK_TYPE,
+        event,
+        data: {
+          access_token: ghtoken.token,
+        },
+      },
+    })
+  }
+
+  return api.updateHook({
+    hook_id: ntlHook.id,
+    body: {
+      data: {
+        access_token: ghtoken.token,
+      },
+    },
+  })
+}
+
+const GITHUB_HOOK_EVENTS = ['deploy_created', 'deploy_failed', 'deploy_building']
+const GITHUB_HOOK_TYPE = 'github_commit_status'

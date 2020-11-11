@@ -84,15 +84,22 @@ netlify deploy
 
 **Flags**
 
-- `dir` (*option*) - Specify a folder to deploy
-- `functions` (*option*) - Specify a functions folder to deploy
+- `dir` (*string*) - Specify a folder to deploy
+- `functions` (*string*) - Specify a functions folder to deploy
 - `prod` (*boolean*) - Deploy to production
+- `alias` (*string*) - Specifies the alias for deployment. Useful for creating predictable deployment URL's
+- `branch` (*string*) - Serves the same functionality as --alias. Deprecated and will be removed in future versions
 - `open` (*boolean*) - Open site after deploy
-- `message` (*option*) - A short message to include in the deploy log
-- `auth` (*option*) - Netlify auth token to deploy with
-- `site` (*option*) - A site ID to deploy to
+- `message` (*string*) - A short message to include in the deploy log
+- `auth` (*string*) - Netlify auth token to deploy with
+- `site` (*string*) - A site ID to deploy to
 - `json` (*boolean*) - Output deployment data as JSON
-- `timeout` (*option*) - Timeout to wait for deployment to finish
+- `timeout` (*string*) - Timeout to wait for deployment to finish
+- `trigger` (*boolean*) - Trigger a new build of your site on Netlify without uploading local files
+- `build` (*boolean*) - Run build command before deploying
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 **Examples**
 
@@ -102,6 +109,7 @@ netlify deploy --prod
 netlify deploy --prod --open
 netlify deploy --message "A message with an $ENV_VAR"
 netlify deploy --auth $NETLIFY_AUTH_TOKEN
+netlify deploy --trigger
 ```
 
 

@@ -1,9 +1,9 @@
+import { LiveEditor as Editor, LivePreview } from '@compositor/x0/components.js'
 import React from 'react'
-import { Pre, Box, Border } from 'rebass'
-import { LiveEditor as Editor, LivePreview } from '@compositor/x0/components'
+import { Pre } from 'rebass'
 
-export const LiveEditor = props => {
-  const lang = (props.className || '').replace(/^language\-/, '')
+export const LiveEditor = (props) => {
+  const lang = (props.className || '').replace(/^language-/, '')
   const type = lang.charAt(0)
   const code = React.Children.toArray(props.children).join('\n')
 
@@ -13,6 +13,10 @@ export const LiveEditor = props => {
     case '!':
       return <LivePreview mdx={lang === '!mdx'} code={code} />
     default:
-      return <Pre p={3} mt={4} mb={4} bg="gray" children={props.children} />
+      return (
+        <Pre p={3} mt={4} mb={4} bg="gray">
+          {props.children}
+        </Pre>
+      )
   }
 }

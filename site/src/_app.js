@@ -1,18 +1,21 @@
-import React from 'react'
-import RebassMDX from '@rebass/mdx'
+import { ScopeProvider } from '@compositor/x0/components.js'
 import createScope from '@rebass/markdown'
-import * as Rebass from 'rebass'
+import RebassMDX from '@rebass/mdx'
 import sortBy from 'lodash.sortby'
-import { ScopeProvider } from '@compositor/x0/components'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import Layout from './_layout'
-import { LiveEditor } from './_ui'
+// eslint-disable-next-line import/no-namespace
+import * as Rebass from 'rebass'
+
+import Layout from './_layout.js'
+import { LiveEditor } from './_ui.js'
 
 const scope = {
   ...createScope(),
   ...Rebass,
   code: LiveEditor,
   pre: ({ children }) => children,
+  // eslint-disable-next-line react/display-name, id-length
   a: ({ children, href }) => {
     // handle external links
     if (!href.match(/^\//)) {
@@ -27,7 +30,7 @@ const scope = {
         {children}
       </Link>
     )
-  }
+  },
 }
 
 const navOrder = [
@@ -36,8 +39,10 @@ const navOrder = [
   'commands',
   'addons',
   'api',
+  'build',
   'deploy',
   'dev',
+  'env',
   'functions',
   'init',
   'link',
@@ -48,7 +53,7 @@ const navOrder = [
   'status',
   'unlink',
   'netlify-dev',
-  'contributing'
+  'contributing',
 ]
 
 const pageNames = {
@@ -56,16 +61,16 @@ const pageNames = {
   'getting-started': 'Getting Started',
   commands: 'CLI Commands',
   contributing: 'Contributing',
-  'netlify-dev': 'Netlify Dev'
+  'netlify-dev': 'Netlify Dev',
 }
 
-const sortRoutes = routes =>
+const sortRoutes = (routes) =>
   [
-    ...sortBy([...routes], a => {
-      const i = navOrder.indexOf(a.name)
-      return i < 0 ? Infinity : i
-    })
-  ].map(route => {
+    ...sortBy([...routes], ({ name }) => {
+      const index = navOrder.indexOf(name)
+      return index < 0 ? Infinity : index
+    }),
+  ].map((route) => {
     if (!pageNames[route.name]) {
       return route
     }
@@ -73,14 +78,14 @@ const sortRoutes = routes =>
       ...route,
       name: pageNames[route.name],
       props: {
-        hidePagination: true
-      }
+        hidePagination: true,
+      },
     }
   })
 
 export default class App extends React.Component {
   static defaultProps = {
-    title: 'Netlify CLI'
+    title: 'Netlify CLI',
   }
 
   render() {

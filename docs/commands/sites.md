@@ -46,10 +46,13 @@ netlify sites:create
 
 **Flags**
 
-- `name` (*option*) - name of site
-- `account-slug` (*option*) - account slug to create the site under
+- `name` (*string*) - name of site
+- `account-slug` (*string*) - account slug to create the site under
 - `with-ci` (*boolean*) - initialize CI hooks during site creation
 - `manual` (*boolean*) - Force manual CI setup.  Used --with-ci flag
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 ## `sites:delete`
@@ -67,16 +70,19 @@ netlify sites:delete {site-id}
 
 **Arguments**
 
-- siteId - Site ID to delete. `netlify delete 1234-5678-890`
+- siteId - Site ID to delete.
 
 **Flags**
 
 - `force` (*boolean*) - delete without prompting (useful for CI)
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 **Examples**
 
 ```bash
-netlify site:delete 1234-3262-1211
+netlify sites:delete 1234-3262-1211
 ```
 
 ---
@@ -93,6 +99,9 @@ netlify sites:list
 **Flags**
 
 - `json` (*boolean*) - Output site data as JSON
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 

@@ -53,6 +53,12 @@ netlify addons:auth
 
 - name - Add-on slug
 
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
+
 ---
 ## `addons:config`
 
@@ -67,6 +73,12 @@ netlify addons:config
 **Arguments**
 
 - name - Add-on namespace
+
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 ## `addons:create`
@@ -85,6 +97,12 @@ netlify addons:create
 **Arguments**
 
 - name - Add-on namespace
+
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 ## `addons:delete`
@@ -107,6 +125,9 @@ netlify addons:delete
 **Flags**
 
 - `force` (*boolean*) - delete without prompting (useful for CI)
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 ## `addons:list`
@@ -122,6 +143,9 @@ netlify addons:list
 **Flags**
 
 - `json` (*boolean*) - Output add-on data as JSON
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 ---
 

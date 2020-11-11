@@ -18,18 +18,21 @@ netlify dev
 
 **Flags**
 
-- `command` (*option*) - command to run
-- `port` (*option*) - port of netlify dev
-- `functionsPort` (*option*) - port for functions server
-- `targetPort` (*option*) - port of target app server
-- `dir` (*option*) - dir with static files
-- `functions` (*option*) - Specify a functions folder to serve
+- `command` (*string*) - command to run
+- `port` (*string*) - port of netlify dev
+- `targetPort` (*string*) - port of target app server
+- `dir` (*string*) - dir with static files
+- `functions` (*string*) - specify a functions folder to serve
 - `offline` (*boolean*) - disables any features that require network access
-- `live` (*boolean*) - Start a public live session
+- `live` (*boolean*) - start a public live session
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 | Subcommand | description  |
 |:--------------------------- |:-----|
 | [`dev:exec`](/docs/commands/dev.md#devexec) | Exec command  |
+| [`dev:trace`](/docs/commands/dev.md#devtrace) | Trace command  |
 
 
 **Examples**
@@ -53,10 +56,52 @@ Runs a command within the netlify dev environment, e.g. with env variables from 
 netlify dev:exec
 ```
 
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
+
 **Examples**
 
 ```bash
-$ netlify exec npm run bootstrap
+$ netlify dev:exec npm run bootstrap
+```
+
+---
+## `dev:trace`
+
+Trace command
+Simulates Netlify's Edge routing logic to match specific requests.
+This command is designed to mimic cURL's command line, so the flags are more familiar.
+
+
+**Usage**
+
+```bash
+netlify dev:trace
+```
+
+**Arguments**
+
+- url - Sets the request URL
+
+**Flags**
+
+- `request` (*string*) - Specifies a custom request method [default: GET]
+- `cookie` (*string*) - Request cookie, this flag can be used multiple times. Example: "nf_jwt=token"
+- `header` (*string*) - Request header, this flag can be used multiple times. Example: "Host: netlify.test"
+- `watch` (*string*) - Path to the publish directory
+- `debug` (*boolean*) - Print debugging information
+
+**Examples**
+
+```bash
+$ netlify dev:trace http://localhost/routing-path
+$ netlify dev:trace -w dist-directory http://localhost/routing-path
+$ netlify dev:trace -X POST http://localhost/routing-path
+$ netlify dev:trace -H "Accept-Language es" http://localhost/routing-path
+$ netlify dev:trace --cookie nf_jwt=token http://localhost/routing-path
 ```
 
 ---

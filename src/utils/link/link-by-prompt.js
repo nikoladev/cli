@@ -1,11 +1,13 @@
 const path = require('path')
-const inquirer = require('inquirer')
+
 const chalk = require('chalk')
+const inquirer = require('inquirer')
 const isEmpty = require('lodash.isempty')
+
 const getRepoData = require('../get-repo-data')
 const { track } = require('../telemetry')
 
-module.exports = async function linkPrompts(context) {
+module.exports = async function linkPrompts(context, flags = {}) {
   const { api, state } = context.netlify
 
   const SITE_NAME_PROMPT = 'Search by full or partial site name'
@@ -15,7 +17,7 @@ module.exports = async function linkPrompts(context) {
   let GIT_REMOTE_PROMPT = 'Use the current git remote origin URL'
   let site
   // Get git remote data if exists
-  const repoInfo = await getRepoData()
+  const repoInfo = await getRepoData(flags.gitRemoteName)
 
   const LinkChoices = [SITE_NAME_PROMPT, SITE_LIST_PROMPT, SITE_ID_PROMPT]
 
@@ -37,8 +39,8 @@ module.exports = async function linkPrompts(context) {
       type: 'list',
       name: 'linkType',
       message: 'How do you want to link this folder to a site?',
-      choices: LinkChoices
-    }
+      choices: LinkChoices,
+    },
   ])
 
   let kind
@@ -59,12 +61,11 @@ module.exports = async function linkPrompts(context) {
 
       if (isEmpty(sites)) {
         context.error(
-          new Error(`You don't have any sites yet. Run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
+          new Error(`You don't have any sites yet. Run ${chalk.cyanBright('netlify sites:create')} to create a site.`),
         )
       }
 
-      const matchingSites = sites.filter(s => {
-        const buildSettings = s.build_settings || {}
+      const matchingSites = sites.filter(({ build_settings: buildSettings = {} }) => {
         return repoUrl === buildSettings.repo_url
       })
 
@@ -83,7 +84,8 @@ Run ${chalk.cyanBright('git remote -v')} to see a list of your git remotes.`)
 
       // Matches a single site hooray!
       if (matchingSites.length === 1) {
-        site = matchingSites[0]
+        const [firstSite] = matchingSites
+        site = firstSite
       } else if (matchingSites.length > 1) {
         // Matches multiple sites. Users must choose which to link.
         console.log(`Found ${matchingSites.length} matching sites!`)
@@ -94,11 +96,11 @@ Run ${chalk.cyanBright('git remote -v')} to see a list of your git remotes.`)
             type: 'list',
             name: 'selectedSite',
             message: 'Which site do you want to link?',
-            choices: matchingSites.map(site => ({
-              name: `${site.name} - ${site.ssl_url}`,
-              value: site
-            }))
-          }
+            choices: matchingSites.map((matchingSite) => ({
+              name: `${matchingSite.name} - ${matchingSite.ssl_url}`,
+              value: matchingSite,
+            })),
+          },
         ])
         if (!selectedSite) {
           context.error('No site selected')
@@ -113,8 +115,8 @@ Run ${chalk.cyanBright('git remote -v')} to see a list of your git remotes.`)
         {
           type: 'input',
           name: 'searchTerm',
-          message: 'Enter the site name (or just part of it):'
-        }
+          message: 'Enter the site name (or just part of it):',
+        },
       ])
       context.log(`Looking for sites with names containing '${searchTerm}'...`)
       context.log()
@@ -123,13 +125,13 @@ Run ${chalk.cyanBright('git remote -v')} to see a list of your git remotes.`)
       try {
         matchingSites = await api.listSites({
           name: searchTerm,
-          filter: 'all'
+          filter: 'all',
         })
-      } catch (e) {
-        if (e.status === 404) {
+      } catch (error) {
+        if (error.status === 404) {
           context.error(`'${searchTerm}' not found`)
         } else {
-          context.error(e)
+          context.error(error)
         }
       }
 
@@ -148,15 +150,16 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
             name: 'selectedSite',
             message: 'Which site do you want to link?',
             paginated: true,
-            choices: matchingSites.map(site => ({ name: site.name, value: site }))
-          }
+            choices: matchingSites.map((matchingSite) => ({ name: matchingSite.name, value: matchingSite })),
+          },
         ])
         if (!selectedSite) {
           context.error('No site selected')
         }
         site = selectedSite
       } else {
-        site = matchingSites[0]
+        const [firstSite] = matchingSites
+        site = firstSite
       }
       break
     }
@@ -168,8 +171,8 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
       let sites
       try {
         sites = await api.listSites({ filter: 'all' })
-      } catch (e) {
-        context.error(e)
+      } catch (error) {
+        context.error(error)
       }
 
       if (isEmpty(sites)) {
@@ -182,8 +185,8 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
           name: 'selectedSite',
           message: 'Which site do you want to link?',
           paginated: true,
-          choices: sites.map(site => ({ name: site.name, value: site }))
-        }
+          choices: sites.map((matchingSite) => ({ name: matchingSite.name, value: matchingSite })),
+        },
       ])
       if (!selectedSite) {
         context.error('No site selected')
@@ -197,21 +200,23 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
         {
           type: 'input',
           name: 'siteId',
-          message: 'What is the site ID?'
-        }
+          message: 'What is the site ID?',
+        },
       ])
 
       try {
         site = await api.getSite({ siteId })
-      } catch (e) {
-        if (e.status === 404) {
+      } catch (error) {
+        if (error.status === 404) {
           context.error(new Error(`Site ID '${siteId}' not found`))
         } else {
-          context.error(e)
+          context.error(error)
         }
       }
       break
     }
+    default:
+      return
   }
 
   if (!site) {
@@ -224,7 +229,7 @@ or run ${chalk.cyanBright('netlify sites:create')} to create a site.`)
   await track('sites_linked', {
     siteId: site.id,
     linkType: 'prompt',
-    kind: kind
+    kind,
   })
 
   // Log output

@@ -15,6 +15,9 @@ netlify open
 
 **Flags**
 
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 - `site` (*boolean*) - Open site
 - `admin` (*boolean*) - Open Netlify site
 
@@ -44,6 +47,12 @@ Opens current site admin UI in Netlify
 netlify open:admin
 ```
 
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
+
 **Examples**
 
 ```bash
@@ -60,6 +69,12 @@ Opens current site url in browser
 ```bash
 netlify open:site
 ```
+
+**Flags**
+
+- `debug` (*boolean*) - Print debugging information
+- `httpProxy` (*string*) - Proxy server address to route requests through.
+- `httpProxyCertificateFilename` (*string*) - Certificate file to use when connecting using a proxy server
 
 **Examples**
 

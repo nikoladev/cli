@@ -17,30 +17,30 @@ const typeDefs = gql`
 const authors = [
   { id: 1, name: 'Terry Pratchett', married: false },
   { id: 2, name: 'Stephen King', married: true },
-  { id: 3, name: 'JK Rowling', married: false }
+  { id: 3, name: 'JK Rowling', married: false },
 ]
 
 const resolvers = {
   Query: {
-    hello: (root, args, context) => {
+    hello: () => {
       return 'Hello, world!'
     },
-    allAuthors: (root, args, context) => {
+    allAuthors: () => {
       return authors
     },
-    author: (root, args, context) => {
-      return
-    },
-    authorByName: (root, args, context) => {
+    author: () => {},
+    authorByName: (root, args) => {
       console.log('hihhihi', args.name)
-      return authors.find(x => x.name === args.name) || 'NOTFOUND'
-    }
-  }
+      return authors.find((author) => author.name === args.name) || 'NOTFOUND'
+    },
+  },
 }
 
 const server = new ApolloServer({
   typeDefs,
-  resolvers
+  resolvers,
 })
 
-exports.handler = server.createHandler()
+const handler = server.createHandler()
+
+module.exports = { handler }

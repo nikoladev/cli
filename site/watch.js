@@ -1,54 +1,52 @@
 /* Syncs blog content from repo to /site/blog */
+const fs = require('fs').promises
 const path = require('path')
+
 const sane = require('sane')
-const fs = require('fs-extra')
+
 const config = require('./config')
+const { ensureFilePathAsync, removeRecursiveAsync } = require('./fs')
+
 const watcher = sane(config.docs.srcPath, { glob: ['**/*.md'] })
 
 /* Watch Files */
-watcher.on('ready', function() {
+watcher.on('ready', function onReady() {
   console.log(`Watching ${config.docs.srcPath} files for changes`)
 })
 
-watcher.on('change', function(filepath, root, stat) {
+watcher.on('change', async function onChange(filepath) {
   console.log('file changed', filepath)
-  syncFile(filepath).then(() => {
-    // console.log('done')
-  })
+  await syncFile(filepath)
 })
 
-watcher.on('add', function(filepath, root, stat) {
+watcher.on('add', async function onAdd(filepath) {
   console.log('file added')
-  syncFile(filepath).then(() => {
-    // console.log('done')
-  })
+  await syncFile(filepath)
 })
 
-watcher.on('delete', function(filepath, root) {
+watcher.on('delete', async function onDelete(filepath) {
   console.log('file deleted', filepath)
-  deleteFile(filepath).then(() => {
-    console.log('File deletion complete')
-  })
+  await deleteFile(filepath)
+  console.log('File deletion complete')
 })
 
 /* utils */
-function getFullPath(filePath) {
+const getFullPath = function (filePath) {
   return {
     src: path.join(config.docs.srcPath, filePath),
-    destination: path.join(config.docs.outputPath, filePath)
+    destination: path.join(config.docs.outputPath, filePath),
   }
 }
 
-function syncFile(filePath) {
+const syncFile = async function (filePath) {
   const { src, destination } = getFullPath(filePath)
-  return fs.copy(src, destination).then(() => {
-    console.log(`${filePath} synced to ${destination}`)
-  })
+  await ensureFilePathAsync(destination)
+  await fs.copyFile(src, destination)
+  console.log(`${filePath} synced to ${destination}`)
 }
 
-function deleteFile(filePath) {
+const deleteFile = async function (filePath) {
   const { destination } = getFullPath(filePath)
-  return fs.remove(destination).then(() => {
-    console.log(`${filePath} removed from ${destination}`)
-  })
+  await removeRecursiveAsync(destination)
+  console.log(`${filePath} removed from ${destination}`)
 }
